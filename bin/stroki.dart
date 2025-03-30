@@ -122,6 +122,7 @@ void kmp(String pattern, String text) {
   for (int i = 0; i < n; i++) {
     // быстрые продвижения при фиксированном i
     while (k > 0 && pattern.codeUnitAt(k) != text.codeUnitAt(i)) {
+      // пропускаем заведомо не совпадающие позиции
       k = bpm[k - 1]; // Каждый шаг while уменьшает k на ≥1
       // общее число уменьшений > общее число увеличений
     }
@@ -142,20 +143,20 @@ void kmp(String pattern, String text) {
 List<int> _computePrefixBorder(String pattern) {
   int m = pattern.length;
   List<int> bp = List.filled(m, 0);
-  int border = 0;
+  int k = 0;
 
   for (int i = 1; i < m; i++) {
-    while (border > 0 && pattern.codeUnitAt(i) != pattern.codeUnitAt(border)) {
-      border = bp[border - 1];
+    while (k > 0 && pattern.codeUnitAt(i) != pattern.codeUnitAt(k)) {
+      k = bp[k - 1];
     }
 
-    if (pattern.codeUnitAt(i) == pattern.codeUnitAt(border)) {
-      border++;
+    if (pattern.codeUnitAt(i) == pattern.codeUnitAt(k)) {
+      k++;
     } else {
-      border = 0;
+      k = 0;
     }
 
-    bp[i] = border;
+    bp[i] = k;
   }
 
   return bp;
@@ -163,16 +164,20 @@ List<int> _computePrefixBorder(String pattern) {
 
 // модифицированный массив граней
 // O(m)
+//Он гарантирует, что после сдвига P[bpm[k-1]] ≠ P[k].
+// Если P[bp[k-1]] == P[k], то вместо bp[k-1] берётся bpm[bp[k-1] - 1] (рекурсивно ищется меньшая грань, где символы различаются).
+// гарантируя, что после сдвига следующий сравниваемый символ точно не совпадёт с текущим несовпавшим символом в тексте
+//В худшем случае (без bpm) КМП может деградировать до O(n×m), но с bpm остаётся строго O(n + m).
 List<int> _convertBPtoBPM(List<int> bp, String pattern) {
   int m = pattern.length;
   List<int> bpm = List.from(bp);
 
-  for (int i = 0; i < m; i++) {
-    if (i < m - 1 && pattern.codeUnitAt(bpm[i]) == pattern.codeUnitAt(i + 1)) {
-      if (bpm[i] > 0) {
-        bpm[i] = bpm[bpm[i] - 1];
+  for (int k = 0; k < m; k++) {
+    if (k < m - 1 && pattern.codeUnitAt(bpm[k]) == pattern.codeUnitAt(k + 1)) {
+      if (bpm[k] > 0) {
+        bpm[k] = bpm[bpm[k] - 1];
       } else {
-        bpm[i] = 0;
+        bpm[k] = 0;
       }
     }
   }
