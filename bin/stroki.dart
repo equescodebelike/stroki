@@ -63,13 +63,23 @@ List<int> suffixZValues(String S) {
       r = i;
       l = r - zs[i];
     } else {
+      // если позиция покрыта z-блоком
+
+      // на сколько мы отошли от начала покрывающего z-блока
       int j = n - (r + 1 - i);
       if (zs[j] < i - l) {
         // константая сложность, если внутри текущего z-блока
+
+        // подстрока, оканчивающаяся в i полностью лежит внутри текущего z-блока
+        // мы копируем значение
         zs[i] = zs[j];
         continue;
       } else {
+        // выходим за границы текущего блока
+
         // иначе начинаем с конца текущего блока, что исключает повторную проверку символов
+
+        // с L-ой строки начинаем сравнивать символы
         int matched = strCompBack(S, l, n - i + l);
         zs[i] = (i - l) + matched;
         r = i;
@@ -86,6 +96,8 @@ int strCompBack(String S, int i1, int i2) {
   // O(n) неудачных O(n) удачных
   // границы блока только уменьшаются, max n позиций
   while (i1 >= 0 && i2 >= 0) {
+    print(S[i1] + '\n');
+    print(S[i2] + '\n');
     if (S[i1] != S[i2]) break;
     eqLen++;
     i1--;
@@ -94,9 +106,89 @@ int strCompBack(String S, int i1, int i2) {
   return eqLen;
 }
 
-void main() {
-  String S = "abacabadabacaba";
-  List<int> bs = suffixZValues(S);
+void kmp(String pattern, String text) {
+  if (pattern.isEmpty) {
+    print("Образец пуст");
+    return;
+  }
 
-  print("Массив z-значений суффиксов: $bs");
+  int m = pattern.length;
+  int n = text.length;
+
+  List<int> bp = _computePrefixBorder(pattern);
+  List<int> bpm = _convertBPtoBPM(bp, pattern);
+
+  int k = 0; // текущий индекс в образце
+  for (int i = 0; i < n; i++) {
+    // быстрые продвижения при фиксированном i
+    while (k > 0 && pattern.codeUnitAt(k) != text.codeUnitAt(i)) {
+      k = bpm[k - 1]; // Каждый шаг while уменьшает k на ≥1
+      // общее число уменьшений > общее число увеличений
+    }
+
+    if (pattern.codeUnitAt(k) == text.codeUnitAt(i)) {
+      k++; // увеличивается на меньше или 1 раз при каждом шаге for
+    }
+
+    if (k == m) {
+      print("Вхождение с позиции ${i - m + 1}");
+      k = bpm[k - 1];
+    }
+  }
 }
+
+// построение массива граней
+// O(m)
+List<int> _computePrefixBorder(String pattern) {
+  int m = pattern.length;
+  List<int> bp = List.filled(m, 0);
+  int border = 0;
+
+  for (int i = 1; i < m; i++) {
+    while (border > 0 && pattern.codeUnitAt(i) != pattern.codeUnitAt(border)) {
+      border = bp[border - 1];
+    }
+
+    if (pattern.codeUnitAt(i) == pattern.codeUnitAt(border)) {
+      border++;
+    } else {
+      border = 0;
+    }
+
+    bp[i] = border;
+  }
+
+  return bp;
+}
+
+// модифицированный массив граней
+// O(m)
+List<int> _convertBPtoBPM(List<int> bp, String pattern) {
+  int m = pattern.length;
+  List<int> bpm = List.from(bp);
+
+  for (int i = 0; i < m; i++) {
+    if (i < m - 1 && pattern.codeUnitAt(bpm[i]) == pattern.codeUnitAt(i + 1)) {
+      if (bpm[i] > 0) {
+        bpm[i] = bpm[bpm[i] - 1];
+      } else {
+        bpm[i] = 0;
+      }
+    }
+  }
+
+  return bpm;
+}
+
+void main() {
+  String text = "ABABDABACDABABCABABD";
+  String pattern = "ABABCABAB";
+  kmp(pattern, text);
+}
+
+// void main() {
+//   String S = "abacabadabacaba";
+//   List<int> bs = suffixZValues(S);
+
+//   print("Массив z-значений суффиксов: $bs");
+// }
