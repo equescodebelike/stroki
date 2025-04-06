@@ -57,6 +57,7 @@ List<int> suffixZValues(String S) {
   for (int i = n - 2; i >= 0; i--) {
     zs[i] = 0;
     // если позиция не покрыта z-блоком
+    // 1
     if (i <= l) {
       zs[i] = strCompBack(S, i, n - 1);
       // вычисляем новые границы
@@ -64,6 +65,7 @@ List<int> suffixZValues(String S) {
       l = r - zs[i];
     } else {
       // если позиция покрыта z-блоком
+      // 2a
 
       int j = n - (r + 1 - i);
       if (zs[j] < i - l) {
@@ -74,6 +76,7 @@ List<int> suffixZValues(String S) {
         continue;
       } else {
         // выходим за границы текущего блока
+        // 2b
 
         // иначе начинаем с конца текущего блока, что исключает повторную проверку символов
 
@@ -183,11 +186,56 @@ List<int> _convertBPtoBPM(List<int> bp, String pattern) {
   return bpm;
 }
 
-void main() {
-  String text = "ABABDABACDABABCABABD";
-  String pattern = "ABABCABAB";
-  kmp(pattern, text);
+void shiftAndWithAlphabet(String pattern, String text) {
+  final m = pattern.length;
+  final n = text.length;
+  
+  if (m == 0 || n == 0 || m > n) return;
+
+  const chBeg = '0';
+  const chEnd = 'z';
+  final alphabetSize = chEnd.codeUnitAt(0) - chBeg.codeUnitAt(0) + 1;
+
+  final B = List<int>.filled(alphabetSize, 0);
+  
+  for (var j = 0; j < m; j++) {
+    final char = pattern[j];
+    // вычитаем chBeg чтобы не хранить числа, соотв не используемым символам алфавита
+    final charCode = char.codeUnitAt(0) - chBeg.codeUnitAt(0);
+    
+    if (charCode >= 0 && charCode < alphabetSize) {
+      // Условие (b): Проверка совпадения текущего символа
+      B[charCode] |= 1 << (m - 1 - j);
+    }
+  }
+
+  final uHigh = 1 << (m - 1); // Константа для старшего разряда
+  var M = 0;
+
+  for (var i = 0; i < n; i++) {
+    final currentChar = text[i];
+    final charCode = currentChar.codeUnitAt(0) - chBeg.codeUnitAt(0);
+    // Условие (a): Проверка совпадения префиксов
+    M = ((M >> 1) | uHigh) & B[charCode];
+    
+    if ((M & 1) == 1) {
+      print("Найдено вхождение с позиции ${i - m + 1}");
+    }
+  }
 }
+
+void main() {
+  final pattern = "abra";
+  final text = "abracadabra";
+  shiftAndWithAlphabet(pattern, text);
+
+}
+
+// void main() {
+//   String text = "ABABDABACDABABCABABD";
+//   String pattern = "ABABCABAB";
+//   kmp(pattern, text);
+// }
 
 // void main() {
 //   String S = "abacabadabacaba";
