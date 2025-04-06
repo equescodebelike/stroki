@@ -202,7 +202,7 @@ void shiftAndWithAlphabet(String pattern, String text) {
     final char = pattern[j];
     // вычитаем chBeg чтобы не хранить числа, соотв не используемым символам алфавита
     final charCode = char.codeUnitAt(0) - chBeg.codeUnitAt(0);
-    
+    // битовая карта вхождений
     if (charCode >= 0 && charCode < alphabetSize) {
       // Условие (b): Проверка совпадения текущего символа
       B[charCode] |= 1 << (m - 1 - j);
@@ -210,6 +210,7 @@ void shiftAndWithAlphabet(String pattern, String text) {
   }
 
   final uHigh = 1 << (m - 1); // Константа для старшего разряда
+  // массив битовых карт
   var M = 0;
 
   for (var i = 0; i < n; i++) {
