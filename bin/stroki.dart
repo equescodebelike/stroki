@@ -65,10 +65,8 @@ List<int> suffixZValues(String S) {
     } else {
       // если позиция покрыта z-блоком
 
-      // на сколько мы отошли от начала покрывающего z-блока
       int j = n - (r + 1 - i);
       if (zs[j] < i - l) {
-        // константая сложность, если внутри текущего z-блока
 
         // подстрока, оканчивающаяся в i полностью лежит внутри текущего z-блока
         // мы копируем значение
@@ -118,7 +116,7 @@ void kmp(String pattern, String text) {
   List<int> bp = _computePrefixBorder(pattern);
   List<int> bpm = _convertBPtoBPM(bp, pattern);
 
-  int k = 0; // текущий индекс в образце
+  int k = 0; // поддержание текущей длины совпдающего префикса
   for (int i = 0; i < n; i++) {
     // быстрые продвижения при фиксированном i
     while (k > 0 && pattern.codeUnitAt(k) != text.codeUnitAt(i)) {
