@@ -197,7 +197,7 @@ void shiftAndWithAlphabet(String pattern, String text) {
   final alphabetSize = chEnd.codeUnitAt(0) - chBeg.codeUnitAt(0) + 1;
 
   final B = List<int>.filled(alphabetSize, 0);
-  
+  // O(n) + alphabetSize
   for (var j = 0; j < m; j++) {
     final char = pattern[j];
     // вычитаем chBeg чтобы не хранить числа, соотв не используемым символам алфавита
@@ -208,11 +208,11 @@ void shiftAndWithAlphabet(String pattern, String text) {
       B[charCode] |= 1 << (m - 1 - j);
     }
   }
-
+  // uhigh для чего???
   final uHigh = 1 << (m - 1); // Константа для старшего разряда
   // массив битовых карт
   var M = 0;
-
+  // Вычисление «строк матрицы» и фиксация вхождений
   for (var i = 0; i < n; i++) {
     final currentChar = text[i];
     final charCode = currentChar.codeUnitAt(0) - chBeg.codeUnitAt(0);
