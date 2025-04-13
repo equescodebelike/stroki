@@ -205,10 +205,11 @@ void shiftAndWithAlphabet(String pattern, String text) {
     // битовая карта вхождений
     if (charCode >= 0 && charCode < alphabetSize) {
       // Условие (b): Проверка совпадения текущего символа
+      // тк мы нумеруем позиции слева направо, а рязряды двоичных чисел
+      // младшие находятся находятся наоборот справа
       B[charCode] |= 1 << (m - 1 - j);
     }
   }
-  // uhigh для чего???
   final uHigh = 1 << (m - 1); // Константа для старшего разряда
   // массив битовых карт
   var M = 0;
@@ -218,7 +219,7 @@ void shiftAndWithAlphabet(String pattern, String text) {
     final charCode = currentChar.codeUnitAt(0) - chBeg.codeUnitAt(0);
     // Условие (a): Проверка совпадения префиксов
     M = ((M >> 1) | uHigh) & B[charCode];
-    
+    // 1 в младшем разряде?
     if ((M & 1) == 1) {
       print("Найдено вхождение с позиции ${i - m + 1}");
     }
