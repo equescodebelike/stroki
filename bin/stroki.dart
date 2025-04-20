@@ -1,27 +1,27 @@
-List<int> suffixBorderArray(String S) {
-  int n = S.length;
-  List<int> bs = List.filled(n, 0); // Инициализация массива bs нулями
+// List<int> suffixBorderArray(String S) {
+//   int n = S.length;
+//   List<int> bs = List.filled(n, 0); // Инициализация массива bs нулями
 
-  // Проход по строке справа налево
-  for (int i = n - 2; i >= 0; --i) {
-    int bsLeft = bs[i + 1]; // длина текущей грани
+//   // Проход по строке справа налево
+//   for (int i = n - 2; i >= 0; --i) {
+//     int bsLeft = bs[i + 1]; // длина текущей грани
 
-    // переходим к предыдущей грани
-    while (bsLeft > 0 && S[i] != S[n - bsLeft - 1]) {
-      bsLeft = bs[n - bsLeft];
-    }
+//     // переходим к предыдущей грани
+//     while (bsLeft > 0 && S[i] != S[n - bsLeft - 1]) {
+//       bsLeft = bs[n - bsLeft];
+//     }
 
-    // Если символы совпадают, увеличиваем длину грани на 1
-    if (S[i] == S[n - bsLeft - 1]) {
-      // длина наибольшей грани
-      bs[i] = bsLeft + 1;
-    } else {
-      bs[i] = 0; // Иначе грань нулевой длины
-    }
-  }
+//     // Если символы совпадают, увеличиваем длину грани на 1
+//     if (S[i] == S[n - bsLeft - 1]) {
+//       // длина наибольшей грани
+//       bs[i] = bsLeft + 1;
+//     } else {
+//       bs[i] = 0; // Иначе грань нулевой длины
+//     }
+//   }
 
-  return bs;
-}
+//   return bs;
+// }
 
 List<int> suffixBorderArrayNaive(String S) {
   int n = S.length;
@@ -69,7 +69,6 @@ List<int> suffixZValues(String S) {
 
       int j = n - (r + 1 - i);
       if (zs[j] < i - l) {
-
         // подстрока, оканчивающаяся в i полностью лежит внутри текущего z-блока
         // мы копируем значение
         zs[i] = zs[j];
@@ -189,7 +188,7 @@ List<int> _convertBPtoBPM(List<int> bp, String pattern) {
 void shiftAndWithAlphabet(String pattern, String text) {
   final m = pattern.length;
   final n = text.length;
-  
+
   if (m == 0 || n == 0 || m > n) return;
 
   const chBeg = '0';
@@ -226,12 +225,159 @@ void shiftAndWithAlphabet(String pattern, String text) {
   }
 }
 
-void main() {
-  final pattern = "abra";
-  final text = "abracadabra";
-  shiftAndWithAlphabet(pattern, text);
+void boyerMoore(String pattern, String text, bool strongRule) {
+  int m = pattern.length;
+  int n = text.length;
 
+  // Препроцессинг для правила плохого символа
+  Map<String, int> badCharShift = preprocessBadChar(pattern);
+
+  // Препроцессинг для правила хорошего суффикса
+  List<int> bs = List.filled(m, 0);
+  suffixBorderArray(pattern, bs);
+
+  List<int> br = List.filled(m, 0);
+  bsToBr(bs, br, m);
+
+  List<int> bsModified = List.from(bs);
+  if (strongRule) {
+    bsToBsm(bsModified, m, pattern);
+  }
+
+  // заполняем фиктивными значениями
+  // не для любой позиции слева есть ближайший хороший суффикс
+  List<int> ns = List.filled(m, -1);
+  bsToNs(bsModified, ns, m);
+
+  int currentTextPosition = m; // Правая граница «прикладывания» образца
+
+  while (currentTextPosition <= n) {
+    // Поиск вхождений
+    int patternIndex = m - 1;
+    int textIndex = currentTextPosition - 1;
+    // Сравнение образца с текстом справа налево
+    while (patternIndex >= 0 && pattern[patternIndex] == text[textIndex]) {
+      patternIndex--;
+      textIndex--;
+    }
+    // Результаты сравнения
+    if (patternIndex < 0) {
+      print("Найдено вхождение на позиции ${textIndex + 1}");
+      int goodSuffixShift = m - br[0];
+      currentTextPosition += goodSuffixShift;
+    } else {
+      // Продвижение по наиболее эффективному правилу
+      int badShift =
+          badCharShift.containsKey(text[textIndex]) ? patternIndex - badCharShift[text[textIndex]]! : patternIndex + 1;
+
+      int goodSuffixShift = goodSuffixShiftFunction(ns, br, patternIndex, m);
+
+      currentTextPosition += max(badShift, goodSuffixShift);
+    }
+  }
 }
+
+// Создаёт таблицу последних вхождений символов
+Map<String, int> preprocessBadChar(String pattern) {
+  Map<String, int> shiftMap = {};
+  for (int i = 0; i < pattern.length; i++) {
+    shiftMap[pattern[i]] = i;
+  }
+  // "ABCDABD" создаст {'A':4, 'B':5, 'C':2, 'D':6}
+  return shiftMap;
+}
+
+void suffixBorderArray(String pattern, List<int> bs) {
+  int m = pattern.length;
+  bs[m - 1] = 0;
+  int border = 0;
+
+  for (int i = m - 2; i >= 0; i--) {
+    border = bs[i + 1];
+    while (border > 0 && pattern[i] != pattern[m - 1 - border]) {
+      border = bs[m - border];
+    }
+    if (pattern[i] == pattern[m - 1 - border]) {
+      border++;
+    }
+    bs[i] = border;
+  }
+}
+
+// Создаёт массив br, где br[k] — наибольшая грань, не превышающая длину текущего суффикса m-k-1
+// Используется для случаев, когда нет полной копии суффикса
+// сложность линейна по m, каждый элемент br[k] получает значение ровно один раз, массивы
+// можно совместить
+void bsToBr(List<int> bs, List<int> br, int m) {
+  int currentBorder = bs[0];
+  int k = 0;
+
+  while (currentBorder > 0) {
+    // k < m - currBorder <=> currBorder < m - k
+    while (k < m - currentBorder) {
+      br[k] = currentBorder; // Меньшая грань образца (k = m - currBorder)
+      k++;
+    }
+    currentBorder = bs[m - currentBorder];
+  }
+
+  while (k < m) {
+    br[k] = 0;
+    k++;
+  }
+}
+
+// Проверяет условие сильного правила: символ перед гранью должен отличаться
+// Корректирует значения граней для соблюдения этого условия
+void bsToBsm(List<int> bs, int m, String pattern) {
+  for (int j = 0; j < m; j++) {
+    if (bs[j] > 0) {
+      int border = bs[j];
+      if (j - border >= 0 && pattern[j - border] == pattern[m - 1 - border]) {
+        bs[j] = bs[m - border];
+      }
+    }
+  }
+}
+
+// Заполняет массив ns, где ns[k] хранит позицию ближайшей слева копии суффикса pattern[k+1..m-1]
+// Используется для быстрого определения сдвига по правилу хорошего суффикса
+void bsToNs(List<int> bs, List<int> ns, int m) {
+  for (int j = 0; j < m - 1; j++) {
+    if (bs[j] != 0) { // порядок просмотра bs гарантирует сохранение позиций самых правых копий суффиксов
+      int k = m - bs[j] - 1;
+      if (k >= 0 && k < m) {
+        ns[k] = j;
+      }
+    }
+  }
+}
+// ns массив ближайших суффиксов слева либо сильное либо слабое правило
+int goodSuffixShiftFunction(List<int> ns, List<int> br, int posBad, int m) {
+  if (posBad == m - 1) return 1; // Хорошего суффикса нет
+  if (posBad < 0) return m - br[0]; // Образец совпал – сдвиг по наиб. грани
+  int copyPos = ns[posBad]; // Вхождение левой копии суффикса
+  if (copyPos >= 0) {
+    return posBad - copyPos + 1;
+  } else {
+    return m - br[posBad]; // Cдвиг по ограниченной наибольшей грани
+  }
+}
+
+int max(int a, int b) => a > b ? a : b;
+
+void main() {
+  String text = "ABAAABCDABCABCDABCDABDE";
+  String pattern = "ABCDABD";
+  boyerMoore(pattern, text, true);
+}
+
+// void main() {
+//   final pattern = "abra";
+//   final text = "abracadabra";
+//   shiftAndWithAlphabet(pattern, text);
+
+// }
 
 // void main() {
 //   String text = "ABABDABACDABABCABABD";
