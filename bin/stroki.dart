@@ -306,8 +306,8 @@ void suffixBorderArray(String pattern, List<int> bs) {
 
 // Создаёт массив br, где br[k] — наибольшая грань, не превышающая длину текущего суффикса m-k-1
 // Используется для случаев, когда нет полной копии суффикса
-// сложность линейна по m, каждый элемент br[k] получает значение ровно один раз, массивы
-// можно совместить
+// каждый элемент br[k] получает значение 1 раз
+// массивы можно совместить
 void bsToBr(List<int> bs, List<int> br, int m) {
   int currentBorder = bs[0];
   int k = 0;
@@ -344,7 +344,8 @@ void bsToBsm(List<int> bs, int m, String pattern) {
 // Используется для быстрого определения сдвига по правилу хорошего суффикса
 void bsToNs(List<int> bs, List<int> ns, int m) {
   for (int j = 0; j < m - 1; j++) {
-    if (bs[j] != 0) { // порядок просмотра bs гарантирует сохранение позиций самых правых копий суффиксов
+    if (bs[j] != 0) {
+      // порядок просмотра bs гарантирует сохранение позиций самых правых копий суффиксов
       int k = m - bs[j] - 1;
       if (k >= 0 && k < m) {
         ns[k] = j;
@@ -352,6 +353,7 @@ void bsToNs(List<int> bs, List<int> ns, int m) {
     }
   }
 }
+
 // ns массив ближайших суффиксов слева либо сильное либо слабое правило
 int goodSuffixShiftFunction(List<int> ns, List<int> br, int posBad, int m) {
   if (posBad == m - 1) return 1; // Хорошего суффикса нет
@@ -366,10 +368,56 @@ int goodSuffixShiftFunction(List<int> ns, List<int> br, int posBad, int m) {
 
 int max(int a, int b) => a > b ? a : b;
 
+int gorner2Mod(List<int> S, int m, int q) {
+  int res = 0;
+  for (int i = 0; i < m; i++) {
+    res = (res * 2 + S[i]) % q;
+  }
+  return res;
+}
+
+void KR(String P, String T, int q) {
+  List<int> pBinary = P.codeUnits.map((c) => c & 1).toList();
+  List<int> tBinary = T.codeUnits.map((c) => c & 1).toList();
+  
+  int m = P.length;
+  int n = T.length;
+  
+  int p2m = 1;
+  for (int i = 0; i < m - 1; i++) {
+    p2m = (p2m * 2) % q;
+  }
+  
+  int hp = gorner2Mod(pBinary, m, q);
+  int ht = gorner2Mod(tBinary, m, q);
+
+  for (int j = 0; j <= n - m; j++) {
+    if (ht == hp) {
+      bool match = true;
+      for (int k = 0; k < m; k++) {
+        if (P[k] != T[j + k]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        print("Найдено вхождение c позиции $j");
+      }
+    }
+    
+    if (j < n - m) {
+      ht = ((ht - p2m * tBinary[j]) * 2 + tBinary[j + m]) % q;
+      if (ht < 0) {
+        ht += q;
+      }
+    }
+  }
+}
+
 void main() {
   String text = "ABAAABCDABCABCDABCDABDE";
   String pattern = "ABCDABD";
-  boyerMoore(pattern, text, true);
+  KR(pattern, text, 6);
 }
 
 // void main() {
