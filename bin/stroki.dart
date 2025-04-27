@@ -394,6 +394,8 @@ void KR(String P, String T, int q) {
   for (int j = 0; j <= n - m; j++) {
     if (ht == hp) {
       bool match = true;
+      // только при коллизии заходим в цикл
+      // 1/q
       for (int k = 0; k < m; k++) {
         if (P[k] != T[j + k]) {
           match = false;
@@ -406,6 +408,7 @@ void KR(String P, String T, int q) {
     }
     
     if (j < n - m) {
+      // const
       ht = ((ht - p2m * tBinary[j]) * 2 + tBinary[j + m]) % q;
       if (ht < 0) {
         ht += q;
@@ -417,7 +420,7 @@ void KR(String P, String T, int q) {
 void main() {
   String text = "ABAAABCDABCABCDABCDABDE";
   String pattern = "ABCDABD";
-  KR(pattern, text, 6);
+  KR(pattern, text, 7);
 }
 
 // void main() {
